@@ -1,0 +1,8 @@
+services:
+
+  web:
+    build: .
+    container_name: nextidea-app
+    ports:
+      - "8084:80"
+    restart: unless-stopped
