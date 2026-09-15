@@ -1,39 +1,52 @@
+```groovy
 pipeline {
 
     agent any
 
     stages {
 
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'test -f app/index.html'
+            }
+        }
+
         stage('Test') {
             steps {
-                echo 'Testing application...'
-
-                sh 'test -f app/index.html'
                 sh 'grep -q "Nextidea Company" app/index.html'
             }
         }
 
         stage('Docker Build') {
             steps {
-                echo 'Building Docker image...'
-
                 sh 'docker build -t nextidea-app:latest .'
             }
         }
 
         stage('Docker Test') {
             steps {
-                echo 'Testing Docker image...'
-
-                sh 'docker images | grep nextidea-app'
+                sh 'docker run -d --name nextidea-test -p 8081:80 nextidea-app:latest'
+                sh 'sleep 3'
+                sh 'curl -f http://localhost:8081'
+                sh 'docker rm -f nextidea-test'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying application...'
-
                 sh 'docker compose up -d --build'
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                sh 'curl -f http://localhost:8080'
             }
         }
     }
@@ -41,11 +54,12 @@ pipeline {
     post {
 
         success {
-            echo 'CI/CD SUCCESS'
+            echo 'CI/CD terminé avec succès'
         }
 
         failure {
-            echo 'CI/CD FAILURE'
+            echo 'CI/CD échoué'
         }
     }
 }
+```
