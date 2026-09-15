@@ -1,10 +1,7 @@
-```groovy
 pipeline {
-
     agent any
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
@@ -31,10 +28,17 @@ pipeline {
 
         stage('Docker Test') {
             steps {
-                sh 'docker run -d --name nextidea-test -p 8084:80 nextidea-app:latest'
+                // Utilisation du port 8085 pour le test éphémère afin d'éviter les conflits avec le port 8084
+                sh 'docker rm -f nextidea-test 2>/dev/null || true'
+                sh 'docker run -d --name nextidea-test -p 8085:80 nextidea-app:latest'
                 sh 'sleep 3'
-                sh 'curl -f http://localhost:8084'
-                sh 'docker rm -f nextidea-test'
+                sh 'curl -f http://localhost:8085'
+            }
+            post {
+                always {
+                    // Supprime le conteneur de test même en cas d'échec du curl
+                    sh 'docker rm -f nextidea-test 2>/dev/null || true'
+                }
             }
         }
 
@@ -46,20 +50,18 @@ pipeline {
 
         stage('Verify') {
             steps {
+                sh 'sleep 3'
                 sh 'curl -f http://localhost:8084'
             }
         }
     }
 
     post {
-
         success {
             echo 'CI/CD terminé avec succès'
         }
-
         failure {
             echo 'CI/CD échoué'
         }
     }
 }
-```
