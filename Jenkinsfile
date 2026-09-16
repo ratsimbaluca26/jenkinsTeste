@@ -1,4 +1,3 @@
-
 pipeline {
 
     agent any
@@ -18,7 +17,7 @@ pipeline {
             }
         }
 
-        stage('Test') {
+        stage('Static Test') {
             steps {
                 sh 'grep -q "Nextidea Company" app/index.html'
             }
@@ -31,23 +30,23 @@ pipeline {
         }
 
         stage('Test Container') {
-    steps {
-        // 1. Nettoyage d'un éventuel ancien conteneur
-        sh 'docker rm -f nextidea-test || true'
-        
-        // 2. Démarrage du conteneur
-        sh 'docker run -d --name nextidea-test nextidea-app:latest'
-        
-        // 3. Attente du démarrage de Nginx
-        sh 'sleep 3'
-        
-        // 4. Test interne avec curl (ou wget si curl n'est pas dans l'image alpine)
-        sh 'docker exec nextidea-test wget --spider -q http://localhost:80 || docker exec nextidea-test curl -f http://localhost:80'
-        
-        // 5. Nettoyage après test
-        sh 'docker rm -f nextidea-test'
-    }
-}
+            steps {
+                // 1. Nettoyage d'un éventuel ancien conteneur de test
+                sh 'docker rm -f nextidea-test || true'
+                
+                // 2. Démarrage du conteneur éphémère
+                sh 'docker run -d --name nextidea-test nextidea-app:latest'
+                
+                // 3. Attente du démarrage de Nginx
+                sh 'sleep 3'
+                
+                // 4. Test interne de l'application
+                sh 'docker exec nextidea-test wget --spider -q http://localhost:80 || docker exec nextidea-test curl -f http://localhost:80'
+                
+                // 5. Nettoyage après test
+                sh 'docker rm -f nextidea-test'
+            }
+        }
 
         stage('Deploy') {
             steps {
@@ -55,15 +54,13 @@ pipeline {
             }
         }
 
-        stage('Test') {
-    steps {
-        // Laisser 3 à 5 secondes au serveur web pour démarrer
-        sh 'sleep 5'
-        
-        // Tester directement l'application via wget ou curl interne
-        sh 'docker exec nextidea-test wget --spider -q http://localhost:80 || docker exec nextidea-test curl -f http://localhost:80'
-    }
-}
+        stage('Verify Deployment') {
+            steps {
+                sh 'sleep 5'
+                // Vérification du statut des services lancés par compose
+                sh 'docker-compose ps'
+            }
+        }
     }
 
     post {
