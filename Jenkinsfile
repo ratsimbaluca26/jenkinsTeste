@@ -55,11 +55,15 @@ pipeline {
             }
         }
 
-        stage('Verify') {
-            steps {
-                sh 'curl -f http://localhost:8083'
-            }
-        }
+        stage('Test') {
+    steps {
+        // Laisser 3 à 5 secondes au serveur web pour démarrer
+        sh 'sleep 5'
+        
+        // Tester directement l'application via wget ou curl interne
+        sh 'docker exec nextidea-test wget --spider -q http://localhost:80 || docker exec nextidea-test curl -f http://localhost:80'
+    }
+}
     }
 
     post {
