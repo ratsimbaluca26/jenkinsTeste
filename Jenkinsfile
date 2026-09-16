@@ -58,7 +58,7 @@ pipeline {
             steps {
                 sh 'sleep 5'
                 // Vérification du statut des services lancés par compose
-                sh 'docker-compose ps'
+                sh 'docker compose ps'
             }
         }
     }
